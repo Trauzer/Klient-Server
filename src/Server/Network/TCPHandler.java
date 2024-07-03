@@ -1,19 +1,22 @@
 package Server.Network;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import org.msgpack.core.MessageBufferPacker;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessageUnpacker;
+
 class TCPHandler {
     private ServerSocket serverSocket;
+    private Socket clientSockets[];
 
-    protected TCPHandler(int port) {
+    protected TCPHandler(int port, int maxClients) {
         try {
             System.out.println("Starting server on port " + port);
             serverSocket = new ServerSocket(port);
+            clientSockets = new Socket[maxClients];
             System.out.println("Server started!");
         } catch (IOException e) {
             System.out.println("Failed to start server on port " + port);
@@ -23,16 +26,23 @@ class TCPHandler {
 
     public void listen() {
         new Thread(() -> {
-            try {
-                while (!serverSocket.isClosed()) {
-                    // Listen for new connections
-                    System.out.println("Listening for new connections...");
-                    Socket clientSocket = serverSocket.accept();
-                    handleConnection(clientSocket);
+            while (!serverSocket.isClosed()) {
+                try {
+                    for (int i = 0; i < clientSockets.length; i++) {
+                        if (clientSockets[i] == null || clientSockets[i].isClosed()) {
+                            clientSockets[i] = serverSocket.accept();
+                            int finalI = i;
+                            new Thread(() -> handleConnection(clientSockets[finalI])).start();
+                            break;
+                        }
+                    }
+
+                    //Socket clientSocket = serverSocket.accept();
+                    //new Thread(() -> handleConnection(clientSocket)).start();
+                } catch (IOException e) {
+                    System.out.println("Failed to accept client connection.");
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                System.out.println("Failed to accept connection");
-                e.printStackTrace();
             }
         }).start();
     }
@@ -44,13 +54,18 @@ class TCPHandler {
         String message = receiveMessage(clientSocket);
         System.out.println("Received message: " + message);
 
-        // Send response to client
         sendMessage(clientSocket, "Hello, client!");
     }
 
     private String receiveMessage(Socket clientSocket) {
         try {
-            return new BufferedReader(new InputStreamReader(clientSocket.getInputStream())).readLine();
+            // Read message from serialization package MessagePack
+            MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(clientSocket.getInputStream());
+            if (unpacker.hasNext()) {
+                String message = unpacker.unpackString();
+                return message;
+            }
+            return null;
         } catch (IOException e) {
             System.out.println("Failed to receive message from client.");
             e.printStackTrace();
@@ -59,8 +74,20 @@ class TCPHandler {
     }
 
     private void sendMessage(Socket clientSocket, String message) {
+        if (clientSocket == null || clientSocket.isClosed()) {
+            System.out.println("Client socket is closed.");
+            return;
+        }
+
         try {
-            new PrintWriter(clientSocket.getOutputStream(), true).println(message);
+            // Send message using serialization package MessagePack
+            byte[] packedMessage;
+            try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
+                packer.packString(message);
+                packedMessage = packer.toByteArray();
+            }
+            clientSocket.getOutputStream().write(packedMessage);
+            System.out.println("Sent message: " + message);
         } catch (IOException e) {
             System.out.println("Failed to send message to client.");
             e.printStackTrace();

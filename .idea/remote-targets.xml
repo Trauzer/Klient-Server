@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <option name="projectDefaultTargetUuid" value="131efb2b-4a3f-4083-b075-18f5eb5f6720" />
+    <targets>
+      <target name="Administrator@65.109.60.41:22" type="ssh/sftp" uuid="131efb2b-4a3f-4083-b075-18f5eb5f6720">
+        <config>
+          <option name="projectRootOnTarget" value="/C:/Users/Administrator/Desktop/klientserwer" />
+          <option name="serverName" value="Administrator@65.109.60.41:22 password" />
+        </config>
+        <ContributedStateBase type="JavaLanguageRuntime">
+          <config>
+            <option name="homePath" value="${JAVA_HOME}&#13;" />
+            <option name="javaVersionString" value="22.0.1" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

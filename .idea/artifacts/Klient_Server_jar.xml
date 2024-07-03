@@ -1,0 +1,10 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Klient-Server:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Klient_Server_jar</output-path>
+    <root id="archive" name="Klient-Server.jar">
+      <element id="module-output" name="Klient-Server" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/msgpack/msgpack-core/0.9.8/msgpack-core-0.9.8.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="A:/Pobrane (HDD)/fxgl-21.1-uber.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

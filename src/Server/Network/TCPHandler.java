@@ -3,12 +3,13 @@ package Server.Network;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
 
 import org.msgpack.core.MessageBufferPacker;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 
-class TCPHandler {
+public abstract class TCPHandler {
     private ServerSocket serverSocket;
     private Socket clientSockets[];
 
@@ -21,6 +22,10 @@ class TCPHandler {
         } catch (IOException e) {
             System.out.println("Failed to start server on port " + port);
             e.printStackTrace();
+        } finally {
+            if (serverSocket == null) {
+                System.exit(1);
+            }
         }
     }
 
@@ -51,48 +56,20 @@ class TCPHandler {
         System.out.println("Handling connection from " + clientSocket.getInetAddress());
 
         // Get message from client
-        String message = receiveMessage(clientSocket);
-        System.out.println("Received message: " + message);
+        HashMap<String, Object> nessage = receiveMessage(clientSocket);
+        System.out.println("Received message: " + nessage);
 
-        sendMessage(clientSocket, "Hello, client!");
+
+        HashMap<String, Object> response = new HashMap<>();
+        response.put("type", "response");
+        response.put("content", "Hello, client!");
+
+        sendMessage(clientSocket, response);
     }
 
-    private String receiveMessage(Socket clientSocket) {
-        try {
-            // Read message from serialization package MessagePack
-            MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(clientSocket.getInputStream());
-            if (unpacker.hasNext()) {
-                String message = unpacker.unpackString();
-                return message;
-            }
-            return null;
-        } catch (IOException e) {
-            System.out.println("Failed to receive message from client.");
-            e.printStackTrace();
-            return null;
-        }
-    }
+    public abstract HashMap<String, Object> receiveMessage(Socket clientSocket);
 
-    private void sendMessage(Socket clientSocket, String message) {
-        if (clientSocket == null || clientSocket.isClosed()) {
-            System.out.println("Client socket is closed.");
-            return;
-        }
-
-        try {
-            // Send message using serialization package MessagePack
-            byte[] packedMessage;
-            try (MessageBufferPacker packer = MessagePack.newDefaultBufferPacker()) {
-                packer.packString(message);
-                packedMessage = packer.toByteArray();
-            }
-            clientSocket.getOutputStream().write(packedMessage);
-            System.out.println("Sent message: " + message);
-        } catch (IOException e) {
-            System.out.println("Failed to send message to client.");
-            e.printStackTrace();
-        }
-    }
+    public abstract void sendMessage(Socket clientSocket, HashMap<String, Object> message);
 
     public void close() {
         try {

@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Network extends TCPHandler {
+    OutputStream out;
+    InputStream in;
+
 
     public Network(String serverAddress, int port) {
         super(serverAddress, port);
@@ -16,7 +19,7 @@ public class Network extends TCPHandler {
 
     public void sendMessage(HashMap<String, Object> message) {
         try {
-            OutputStream out = socket.getOutputStream();
+            out = socket.getOutputStream();
             ObjectOutputStream objectOut = new ObjectOutputStream(out);
             objectOut.writeObject(message);
             objectOut.flush();
@@ -29,7 +32,7 @@ public class Network extends TCPHandler {
     public HashMap<String, Object> receiveMessage() {
         HashMap<String, Object> message = new HashMap<>();
         try {
-            InputStream in = socket.getInputStream();
+            in = socket.getInputStream();
             ObjectInputStream objectIn = new ObjectInputStream(in);
             message = (HashMap<String, Object>) objectIn.readObject();
         } catch (Exception e) {

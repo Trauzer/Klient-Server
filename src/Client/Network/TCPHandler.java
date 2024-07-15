@@ -3,6 +3,8 @@ package Client.Network;
 import java.net.Socket;
 import java.util.HashMap;
 
+import Client.Game.Game;
+
 
 public abstract class TCPHandler {
     protected Socket socket;
@@ -12,6 +14,8 @@ public abstract class TCPHandler {
             socket = new Socket(serverAddress, port);
 
             System.out.println("Connected to server at " + serverAddress + ":" + port);
+
+            Game.initializeGame();
         } catch (Exception e) {
             System.out.println("Failed to connect to server at " + serverAddress + ":" + port);
             e.printStackTrace();
@@ -21,10 +25,6 @@ public abstract class TCPHandler {
             }
         }
     }
-
-    public abstract void sendMessage(HashMap<String, Object> message);
-
-    public abstract HashMap<String, Object> receiveMessage();
 
     public void close() {
         try {

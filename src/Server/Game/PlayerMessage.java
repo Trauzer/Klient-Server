@@ -95,8 +95,8 @@ public class PlayerMessage {
                     returnData.put("name", playerName);
                     break;
                 case "disconnect":
-                    ServerState.decreasePlayerNumbers();
                     ServerState.removePlayerFromList(playerName);
+                    ServerState.decreasePlayerNumbers();
 
                     returnData.put("disconnect", "true");
 
@@ -114,6 +114,8 @@ public class PlayerMessage {
                         } else {
                             returnData.put("guess", ServerState.getGuessedWord());
                         }
+
+                        returnData.put("done", ServerState.isGameDone());
 
                         System.out.println(ServerState.getCurrentPlayer());
                     } else {
@@ -136,10 +138,6 @@ public class PlayerMessage {
                     break;
             }
         });
-
-        //if (!true) {
-            System.out.println(returnData);
-        //}
 
         return returnData;
     }

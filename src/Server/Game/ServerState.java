@@ -3,6 +3,7 @@ package Server.Game;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
 public class ServerState {
     public static String displayWord;
@@ -67,7 +68,12 @@ public class ServerState {
     }
 
     public static void removePlayerFromList(String name) {
+        System.out.println("Removing player: " + name);
         for (int i = 0; i < playerNumbers; i++) {
+            if (playerList[i] == null) {
+                continue;
+            }
+
             if (playerList[i].equals(name)) {
                 playerList[i] = null;
             }

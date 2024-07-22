@@ -98,18 +98,12 @@ public class Game {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
-            //if (!true) {
-                System.out.println("DEBUGDATA:");
-                System.out.println(playerList);
-                System.out.println(canWrite);
-                System.out.println(playerId);
-            //}
         }
 
         System.out.println("Disconnecting from game...");
         client.close();
 
+        System.exit(0);
     }
     
 

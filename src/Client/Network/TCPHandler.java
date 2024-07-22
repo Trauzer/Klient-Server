@@ -14,8 +14,6 @@ public abstract class TCPHandler {
             socket = new Socket(serverAddress, port);
 
             System.out.println("Connected to server at " + serverAddress + ":" + port);
-
-            Game.initializeGame();
         } catch (Exception e) {
             System.out.println("Failed to connect to server at " + serverAddress + ":" + port);
             e.printStackTrace();

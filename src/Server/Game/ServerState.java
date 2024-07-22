@@ -1,11 +1,28 @@
 package Server.Game;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 public class ServerState {
     public static String displayWord;
     public static String matchWord;
-    public static int playerNumbers;
-    public static String[] playerList;
-    public static int currentPlayer;
+    public static int playerNumbers = 0;
+    public static String[] playerList = new String[100];
+    public static int currentPlayer = 1;
+
+    public ServerState() {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+            System.out.println("Utwórz wyraz do zgadnięcia");
+            String input = reader.readLine();
+            System.out.println("Utworzyłeś nowe hasło: " + input);
+
+            ServerState.setMatchWord(input);
+
+        } catch (IOException e) {
+
+        }
+    }
 
     public static void addPlayerNumbers() {
         playerNumbers++;
@@ -32,18 +49,20 @@ public class ServerState {
     }
 
     public static void setCurrentPlayer(int player) {
-        if (playerNumbers <= player) {
+        if (playerNumbers >= player) {
             currentPlayer = player;
         }
     }
 
     public static int goToNextPlayer() {
-        int playerId = playerNumbers + 1;
+        int playerId = currentPlayer + 1;
 
-        if (playerNumbers <= playerId) {
+        if (playerNumbers >= playerId) {
+            setCurrentPlayer(playerId);
             return playerId;
         }
 
+        setCurrentPlayer(1);
         return 1;
     }
 
@@ -60,40 +79,27 @@ public class ServerState {
     }
 
     public static boolean checkLetters(String input) {
+        boolean isGuessed = false;
+
         if (input.length() == 1) {
-            char guessedLetter = input.charAt(0);
-            char[] displayChars = displayWord.toCharArray();
-
-            for (int i = 0; i > matchWord.length(); i++) {
-                if (matchWord.charAt(i) == guessedLetter) {
-                    displayChars[i] = guessedLetter;
+            for (int i = 0; i < matchWord.length(); i++) {
+                if (matchWord.charAt(i) == input.charAt(0)) {
+                    displayWord = displayWord.substring(0, i) + input + displayWord.substring(i + 1);
+                    isGuessed = true;
                 }
             }
-
-            displayWord = new String(displayChars);
-
-            return true;
         } else {
-            String[] words = matchWord.split(" ");
-            String[] displayWords = displayWord.split(" ");
-
-            for (int i = 0; i < words.length; i++) {
-                if (words[i].equalsIgnoreCase(input)) {
-                    displayWords[i] = input;
-
-                    return true;
-                } else {
-                    if (displayWords[i].replaceAll("[^\\s]", "").length() == words[i].length()) {
-                        // If displayWords[i] is fully masked (contains only '*' and spaces), update it
-                        displayWords[i] = words[i].replaceAll("[^\\s]", "*");
-                    }
-                }
+            if (matchWord.equals(input)) {
+                displayWord = input;
+                isGuessed = true;
             }
-
-            displayWord = String.join(" ", displayWords);
         }
 
-        return false;
+        return isGuessed;
+    }
+
+    public static boolean isGameDone() {
+        return matchWord.equals(displayWord);
     }
 
     public static void setMatchWord(String word) {

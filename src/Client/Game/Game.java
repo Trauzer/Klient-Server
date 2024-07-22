@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Scanner;
 
 import Client.Network.Network;
 
@@ -19,10 +20,35 @@ public class Game {
     boolean canWrite = false;
     int guesser = 0;
 
+    BufferedReader reader;
+
     public Game() {
         System.out.println("Initializating game");
 
-        client = new Network("localhost", 26040);
+        String ip = "localhost";
+        int port = 26040;
+
+        try {
+            reader = new BufferedReader(new InputStreamReader(System.in));
+
+            System.out.println("Podaj adres IP: ");
+            String input = reader.readLine();
+            String[] inputAddress = input.split(":");
+
+            if (inputAddress.length == 2) {
+                ip = inputAddress[0];
+                port = Integer.parseInt(inputAddress[1]);
+            } else if (!input.isEmpty() && inputAddress.length == 1) {
+                ip = input;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        client = new Network(ip, port);
+
+        initializeGame();
 
         while (!isInitialized) {
             try {
@@ -56,14 +82,36 @@ public class Game {
                 String newWord = (String) message.get("word");
 
                 if (newWord != word) {
+                    word = newWord;
                     render();
                 }
 
-                word = newWord;
+                if ((boolean) message.get("done")) {
+                    System.out.println("Koniec gry!");
+                    isInitialized = false;
+                }
             }
-            
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            //if (!true) {
+                System.out.println("DEBUGDATA:");
+                System.out.println(playerList);
+                System.out.println(canWrite);
+                System.out.println(playerId);
+            //}
         }
+
+        System.out.println("Disconnecting from game...");
+        client.close();
+
     }
+    
 
     private void render() {
         try {
@@ -89,7 +137,9 @@ public class Game {
                     
                     message = client.receiveMessage();
 
-                    if (!(boolean) message.get("guess")) {
+                    String inputMessage = (String) message.get("guess");
+
+                    if (!inputMessage.equals("false")) {
                         System.out.println("Wytypowano poprawnie: " + userInput);
                     } else {
                         System.out.println("Niestety, brak pasujących znaków dla wejścia: " + userInput);
@@ -105,6 +155,8 @@ public class Game {
 
     }
 
+    private static Scanner scanner = new Scanner(System.in);
+
     public static void initializeGame() {
         HashMap<String, Object> message = new HashMap<>();
         message.put("init", true);
@@ -115,23 +167,18 @@ public class Game {
 
         if (!message.isEmpty()) {
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-                System.out.println("Enter your name: ");
-                String name = reader.readLine();
-                player = new Player(name);
+            System.out.println("Podaj swoje imię: ");
+            String name = scanner.nextLine();
+            player = new Player(name);
 
-                message = new HashMap<>();
-                message.put("name", name);
-                client.sendMessage(message);
+            message = new HashMap<>();
+            message.put("name", name);
+            client.sendMessage(message);
 
-                message = client.receiveMessage();
+            message = client.receiveMessage();
 
-                if (message.get("name") == player.getName()) {
-                    isInitialized = true;
-                }
-            } catch (Exception e) {
-                System.out.println("Failed to initialize game.");
-                e.printStackTrace();
+            if (message.get("name").equals(player.getName())) {
+                isInitialized = true;
             }
         }
     }

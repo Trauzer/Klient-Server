@@ -1,9 +1,9 @@
 package Server.Game;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 
@@ -12,14 +12,16 @@ public class PlayerMessage {
     String playerName;
     int playerId;
 
-    ObjectOutputStream out;
-    ObjectInputStream in;
+    OutputStream out;
+    InputStream in;
+
+    boolean loop = true;
 
     private PlayerMessage(Socket playerSocket) {
         this.playerSocket = playerSocket;
 
 
-        while (true) {
+        while (loop) {
             HashMap<String, Object> clientMessage;
             HashMap<String, Object> serverMessage;
 
@@ -29,6 +31,14 @@ public class PlayerMessage {
 
             sendMessage(serverMessage);
         }
+
+        try {
+            playerSocket.close();
+            System.out.println("Connection closed with client: " + playerSocket.getInetAddress());
+        } catch (Exception e) {
+            System.out.println("Failed to close connection with client: " + playerSocket.getInetAddress());
+            e.printStackTrace();
+        }
     }
 
     public static void initializePlayer(Socket playerSocket) {
@@ -37,14 +47,14 @@ public class PlayerMessage {
 
     private void sendMessage(HashMap<String, Object> message) {
         try {
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            out = new ObjectOutputStream(byteStream);
-            out.writeObject(message);
-            out.flush();
+            out = playerSocket.getOutputStream();
+            ObjectOutputStream objectOut = new ObjectOutputStream(out);
+            objectOut.writeObject(message);
+            objectOut.flush();
 
-            byte[] sendBuffer = byteStream.toByteArray();
-            playerSocket.getOutputStream().write(sendBuffer);
+            System.out.println("Sent message to client: " + playerSocket.getInetAddress());
         } catch (Exception e) {
+            System.out.println("Failed to send message to client: " + playerSocket.getInetAddress());
             e.printStackTrace();
         }
     }
@@ -53,15 +63,15 @@ public class PlayerMessage {
         HashMap<String, Object> message;
 
         try {
-            byte[] receiveBuffer = new byte[1024];
-            int bytesRead = playerSocket.getInputStream().read(receiveBuffer);
+            in = playerSocket.getInputStream();
+            ObjectInputStream objectIn = new ObjectInputStream(in);
 
-            ByteArrayInputStream byteStream = new ByteArrayInputStream(receiveBuffer, 0, bytesRead);
-            in = new ObjectInputStream(byteStream);
+            message = (HashMap<String, Object>) objectIn.readObject();
 
-            message = (HashMap<String, Object>) in.readObject();
+            System.out.println("Recieve message from client: " + playerSocket.getInetAddress());
             return message;
         } catch (Exception e) {
+            System.out.println("Failed to receive message from client " + playerSocket.getInetAddress());
             e.printStackTrace();
         }
         return null;
@@ -89,6 +99,8 @@ public class PlayerMessage {
                     ServerState.removePlayerFromList(playerName);
 
                     returnData.put("disconnect", "true");
+
+                    loop = false;
                     break;
                 case "guess":
                     if (playerId == ServerState.getCurrentPlayer()) {
@@ -98,13 +110,15 @@ public class PlayerMessage {
                         if (!isGuessed) {
                             ServerState.goToNextPlayer();
 
-                            returnData.put("guess", false);
+                            returnData.put("guess", "false");
+                        } else {
+                            returnData.put("guess", ServerState.getGuessedWord());
                         }
 
-                        returnData.put("guess", ServerState.getGuessedWord());
+                        System.out.println(ServerState.getCurrentPlayer());
+                    } else {
+                        returnData.put("notAllowed", "Poczekaj na swoją kolej!");
                     }
-
-                    returnData.put("notAllowed", "Poczekaj na swoją kolej!");
                     break;
                 case "tick":
                     returnData.put("tock", true);
@@ -112,6 +126,7 @@ public class PlayerMessage {
                     returnData.put("word", ServerState.getGuessedWord());
                     returnData.put("queue", ServerState.getCurrentPlayer());
                     returnData.put("playerList", ServerState.getPlayerList());
+                    returnData.put("done", ServerState.isGameDone());
                     
                     break;
                 case "word":
@@ -121,6 +136,10 @@ public class PlayerMessage {
                     break;
             }
         });
+
+        //if (!true) {
+            System.out.println(returnData);
+        //}
 
         return returnData;
     }
